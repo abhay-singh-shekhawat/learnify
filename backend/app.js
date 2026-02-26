@@ -4,9 +4,14 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 app.use(cors({
-  origin: `*`,
+  origin: [
+    'http://localhost:3000',   
+    'http://localhost:5173',     
+    'http://127.0.0.1:3000',
+    "https://learnify.netlify.app"
+  ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], 
-  allowedHeaders: `*`, 
+  allowedHeaders: ['Content-Type', 'Authorization'], 
   credentials: true, 
   preflightContinue: false,
   optionsSuccessStatus: 204 
