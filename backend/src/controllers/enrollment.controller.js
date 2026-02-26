@@ -7,10 +7,12 @@ import { api_error } from "../utils/errorhandeller.js";
 import crypto from "crypto"
 
 import razorpay from "razorpay"
-// const razorpayInstance = new razorpay({
-//     key_id: process.env.RAZORPAY_KEY_ID,
-//     key_secret: process.env.RAZORPAY_KEY_SECRET
-//     });
+const getRazorpayInstance = () => {
+    return new razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+};
 
 const enrollcourse = asyncHandeler(async(req,res,next)=>{
     const studentId = req.user?._id;
@@ -59,52 +61,53 @@ const enrollcourse = asyncHandeler(async(req,res,next)=>{
             enrolled,
         })
     }
-    // const razorpayOrder = await razorpayInstance.orders.create({
-    //     amount : course.Price*100,
-    //     currency : "INR"
-    // })
+    const Razorpay = getRazorpayInstance()
+    const razorpayOrder = await Razorpay.orders.create({
+        amount : course.Price*100,
+        currency : "INR"
+    })
 
-    // const order = await Order.create({
-    //     Student : req.user._id,
-    //     Course : req.params.courseId,
-    //     Teacher : course.Teacher,
-    //     Amount : course.Price,
-    //     razorpayOrderId : razorpayOrder.id
-    // })
-    // res.status(200)
-    // .json({
-    //     orderId : razorpayOrder.id,
-    //     amount : course.Price,
-    //     key_id : process.env.RAZORPAY_KEY_ID
-    // })
+    const order = await Order.create({
+        Student : req.user._id,
+        Course : req.params.courseId,
+        Teacher : course.Teacher,
+        Amount : course.Price,
+        razorpayOrderId : razorpayOrder.id
+    })
+    res.status(200)
+    .json({
+        orderId : razorpayOrder.id,
+        amount : course.Price,
+        key_id : process.env.RAZORPAY_KEY_ID
+    })
 })
 
 const verifyPayment = asyncHandeler(async(req,res,next)=>{
-    // const { razorpay_payment_id , razorpay_order_id , razorpay_signature } = req.body
+    const { razorpay_payment_id , razorpay_order_id , razorpay_signature } = req.body
 
-    // const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
 
-    // const expectedSignature = crypto.createHmac("sha256",process.env.RAZORPAY_SECRET)
-    // .update(body)
-    // .digest("hex")
+    const expectedSignature = crypto.createHmac("sha256",process.env.RAZORPAY_SECRET)
+    .update(body)
+    .digest("hex")
 
-    // if(expectedSignature !== razorpay_signature){
-    //     throw new api_error(402,"payment validation failed")
-    // }
+    if(expectedSignature !== razorpay_signature){
+        throw new api_error(402,"payment validation failed")
+    }
 
-    // const order = await Order.findOne({ razorpayOrderId : razorpay_order_id})
-    // order.razorpayPaymentId = razorpay_payment_id
-    // order.Status = "succeeded"
-    // order.Enrolled = true
-    // await order.save()
+    const order = await Order.findOne({ razorpayOrderId : razorpay_order_id})
+    order.razorpayPaymentId = razorpay_payment_id
+    order.Status = "succeeded"
+    order.Enrolled = true
+    await order.save()
 
-    // await Enrollment.create({
-    //     Student : req.user._id,
-    //     Course : order.Course,
-    //     Teacher : order.Teacher,
-    //     Status : "active",
-    //     paymentOrder : order._id
-    // })
+    await Enrollment.create({
+        Student : req.user._id,
+        Course : order.Course,
+        Teacher : order.Teacher,
+        Status : "active",
+        paymentOrder : order._id
+    })
 
     res.status(200)
     .json({

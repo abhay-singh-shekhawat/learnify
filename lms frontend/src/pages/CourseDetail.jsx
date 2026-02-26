@@ -21,6 +21,24 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Trash2, Star } from 'lucide-react'
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    // Already loaded → resolve immediately
+    if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
+      resolve(true)
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+
+    document.body.appendChild(script)
+  })
+}
+
 const CourseDetail = () => {
   const { id } = useParams()
   const [course, setCourse] = useState(null)
@@ -33,6 +51,15 @@ const CourseDetail = () => {
   const [showReviewForm, setShowReviewForm] = useState(false)
 
   const isLoggedIn = !!getToken()
+
+  // Load Razorpay script once when component mounts
+  useEffect(() => {
+    loadRazorpayScript().then((success) => {
+      if (!success) {
+        console.warn('Failed to load Razorpay SDK')
+      }
+    })
+  }, [])
 
   useEffect(() => {
     fetchCourseDetail()
@@ -56,7 +83,8 @@ const CourseDetail = () => {
 
       setCourse(res.data.course)
       setLectures(res.data.lectures || [])
-      // No isEnrolled field - we don't use it for review button anymore
+      setIsEnrolled(res.data.isEnrolled || false) // ← added this line (was missing in your original)
+      
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to load course details'
       setError(msg)
@@ -105,7 +133,6 @@ const CourseDetail = () => {
       return toast.info('Please login to add a review')
     }
 
-    // No frontend enrollment check - let backend handle it
     setShowReviewForm(true)
     setTimeout(() => {
       document.getElementById('review-form-card')?.scrollIntoView({ behavior: 'smooth' })
@@ -126,6 +153,15 @@ const CourseDetail = () => {
     if (!id) {
       toast.error('Invalid course')
       return
+    }
+
+    // Double-check script is loaded (very rare failure case)
+    if (typeof window.Razorpay !== 'function') {
+      const loaded = await loadRazorpayScript()
+      if (!loaded || typeof window.Razorpay !== 'function') {
+        toast.error('Razorpay failed to load. Please check your connection and try again.')
+        return
+      }
     }
 
     setLoading(true)
@@ -316,7 +352,7 @@ const CourseDetail = () => {
               </Card>
             )}
 
-            {/* Reviews Section - Visible to everyone */}
+            {/* Reviews Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl flex items-center justify-between">
@@ -327,7 +363,6 @@ const CourseDetail = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-8">
-                {/* Add Review Button - Always visible */}
                 <div className="flex justify-center mb-8">
                   <Button 
                     size="lg"
@@ -338,7 +373,6 @@ const CourseDetail = () => {
                   </Button>
                 </div>
 
-                {/* Own Review (with Delete) */}
                 {ownReview && (
                   <div className="border rounded-lg p-6 bg-muted/30 relative">
                     <div className="flex items-start justify-between mb-4">
@@ -384,7 +418,6 @@ const CourseDetail = () => {
                   </div>
                 )}
 
-                {/* All Reviews */}
                 {reviews.length > 0 ? (
                   <div className="space-y-6">
                     {reviews
@@ -430,7 +463,6 @@ const CourseDetail = () => {
                   </p>
                 )}
 
-                {/* Review Form */}
                 {showReviewForm && (
                   <div id="review-form-card" className="pt-8 border-t">
                     <h3 className="text-xl font-semibold mb-6 text-center md:text-left">
@@ -455,7 +487,6 @@ const CourseDetail = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Enrollment / Watch Card */}
             <Card className="sticky top-6">
               <CardHeader>
                 <CardTitle className="text-2xl flex items-center justify-between">
@@ -514,7 +545,6 @@ const CourseDetail = () => {
   )
 }
 
-// Helper for avatar fallback
 const getInitial = (name) => {
   return name?.trim()?.charAt(0)?.toUpperCase() || 'U'
 }

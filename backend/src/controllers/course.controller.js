@@ -33,13 +33,13 @@ const getCLoudinarySignatureForCourseThumbnail = asyncHandeler(async(req,res,nex
 
 const createCourse = asyncHandeler(async(req,res,next)=>{
     const {Title ,ThumbnailUrl , publicId, Description , Price , categoryId ,Tags , Level , isPublished } = req.body;
-    if(!Title || !categoryId || !Level ){
+    if(!Title || !Level ){
         throw new api_error(400,"tittle , catagory , level and accessibility type are required")
     }
-    const foundCatagory = await Catagory.findById(categoryId);
-    if(!foundCatagory){
-        throw new api_error(404,"catagory not found")
-    }
+    // const foundCatagory = await Catagory.findById(categoryId);
+    // if(!foundCatagory){
+    //     throw new api_error(404,"catagory not found")
+    // }
     const user = req.user;
     const isApproved = user.isApproved;
     if(!isApproved){
