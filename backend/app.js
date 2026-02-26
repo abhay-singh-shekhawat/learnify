@@ -8,7 +8,7 @@ app.use(cors({
     'http://localhost:3000',   
     'http://localhost:5173',     
     'http://127.0.0.1:3000',
-    "https://learnify.netlify.app"
+    "https://learnifyit.netlify.app"
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], 
   allowedHeaders: ['Content-Type', 'Authorization'], 
