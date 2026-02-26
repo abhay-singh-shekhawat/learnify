@@ -9,7 +9,7 @@ dotenv.config()
 connect();
 const port = process.env.PORT || 5000
 
-app.listen(port , ()=>{
+app.listen(port ,"0.0.0.0", ()=>{
     console.log(`app is running on http://localhost:${port}`);
 })
 
