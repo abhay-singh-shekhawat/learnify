@@ -1,23 +1,24 @@
 // src/components/ProtectedRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom'
+import { getToken, getUserRole } from '../utils/auth'
 
 const ProtectedRoute = ({ allowedRole = null }) => {
-  const token = localStorage.getItem('token')
-  const role = localStorage.getItem('role') // assuming you save role too
+  const token = getToken()
+  const role = getUserRole()
 
   const isLoggedIn = !!token
 
-  // If not logged in → redirect to login
+  // Not logged in → redirect to login
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />
   }
 
-  // If we have a role restriction (like teacher only)
+  // Role restricted route but wrong role → redirect to home
   if (allowedRole && role !== allowedRole) {
-    return <Navigate to="/" replace /> // or to a "not authorized" page
+    return <Navigate to="/" replace />
   }
 
-  // All good → show the page
+  // All good → render the nested route (TeacherDashboard)
   return <Outlet />
 }
 
