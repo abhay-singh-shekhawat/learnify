@@ -16,18 +16,18 @@ const getRazorpayInstance = () => {
 
 const enrollcourse = asyncHandeler(async(req,res,next)=>{
     const studentId = req.user?._id;
-    const courseId = req.params.courseId;
+    const courseId = req.params?.courseId;
     if (!studentId) {
         throw new api_error(401, "User not authenticated");
     }
-    if (!mongoose.Types.ObjectId.isValid(req.user._id)) {
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
         throw new api_error(400, "Invalid student ID");
     }
     if (!courseId || !mongoose.Types.ObjectId.isValid(courseId)) {
         throw new api_error(400, "Invalid or missing course ID");
     }
 
-    const course = await Course.findById(req.params.courseId)
+    const course = await Course.findById(req.params?.courseId)
     if(!course){
         throw new api_error(404,"no course found")
     }
@@ -36,8 +36,8 @@ const enrollcourse = asyncHandeler(async(req,res,next)=>{
     }
 
     const alreadyEnrolled = await Enrollment.findOne({
-        Student: req.user._id,
-        Course: req.params.courseId
+        Student: studentId,
+        Course: courseId
     });
     if (alreadyEnrolled) {
         return res.json({ message : "You are already enrolled in this course"});
@@ -46,8 +46,8 @@ const enrollcourse = asyncHandeler(async(req,res,next)=>{
     if(course.Price === 0){
         console.log("Creating enrollment with:", { Student: studentId, Course: courseId });
         const enrolled = await Enrollment.findOneAndUpdate({
-            Student : req.user._id,
-            Course : req.params.courseId 
+            Student : studentId,
+            Course : courseId 
         },{ $set : {
             Teacher : course.Teacher,
             Status : "active",
@@ -72,8 +72,8 @@ const enrollcourse = asyncHandeler(async(req,res,next)=>{
     })
 
     const order = await Order.create({
-        Student : req.user._id,
-        Course : req.params.courseId,
+        Student : studentId,
+        Course : courseId,
         Teacher : course.Teacher,
         Amount : course.Price,
         razorpayOrderId : razorpayOrder.id
