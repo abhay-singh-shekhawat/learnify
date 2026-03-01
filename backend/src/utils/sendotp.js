@@ -8,7 +8,7 @@ const sendOtp = async function (email) {
     const otp = generateOtp(6);
 
     const { data, error } = await resend.emails.send({
-      from: 'LearnifyIT <onboarding@yourdomain.com>',
+      from: 'LearnifyIT <onboarding@resend.dev>',
       to: [email],
       subject: 'Your Verification Code',
       html: `
