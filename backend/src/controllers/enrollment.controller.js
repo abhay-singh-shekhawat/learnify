@@ -20,6 +20,9 @@ const enrollcourse = asyncHandeler(async(req,res,next)=>{
     if (!studentId) {
         throw new api_error(401, "User not authenticated");
     }
+    if (!mongoose.Types.ObjectId.isValid(req.user._id)) {
+        throw new api_error(400, "Invalid student ID");
+    }
     if (!courseId || !mongoose.Types.ObjectId.isValid(courseId)) {
         throw new api_error(400, "Invalid or missing course ID");
     }
@@ -47,12 +50,13 @@ const enrollcourse = asyncHandeler(async(req,res,next)=>{
             Course : req.params.courseId 
         },{ $set : {
             Teacher : course.Teacher,
-            Status : "active"
-        },
-            $setOnInsert : { createdAt : new Date()}
+            Status : "active",
+            createdAt : new Date()
+        }
         },{
             upsert : true,
-            new : true
+            new : true,
+            runValidators: true
         })
         return res.status(200)
         .json({
