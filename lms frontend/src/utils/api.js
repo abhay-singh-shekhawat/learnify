@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { removeToken } from './auth';
 
 const api = axios.create({
-  baseURL: 'https://learnify-production-80a0.up.railway.app', // change to production URL later
+  baseURL: 'https://learnify-production-80a0.up.railway.app',
   headers: {
     'Content-Type': 'application/json',
   },
