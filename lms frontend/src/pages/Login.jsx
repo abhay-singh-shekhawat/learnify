@@ -1,8 +1,8 @@
 // src/pages/Login.jsx
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import api from '../utils/api'
-import { saveToken } from '../utils/auth'
+import { saveToken, saveUserRole } from '../utils/auth'  // ← make sure both are imported
 import { toast } from 'react-toastify'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ const Login = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()  // ← NEW: to redirect back to where user came from
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -31,9 +32,30 @@ const Login = () => {
       })
 
       if (res.data.success && res.data.token) {
+        // Save token
         saveToken(res.data.token)
+
+        // Save role - adjust field name based on your actual API response
+        // Common possibilities:
+        // res.data.user.Role
+        // res.data.role
+        // res.data.user.role
+        // Choose ONE line below that matches your backend response
+        const userRole = res.data.user?.Role || res.data.role || res.data.user?.role || null
+
+        if (userRole) {
+          saveUserRole(userRole)
+        } else {
+          console.warn('No role found in login response')
+        }
+
         toast.success('Login successful!')
-        navigate('/')
+
+        // Smart redirect: go back to where user came from, or default to home/student dashboard
+        const from = location.state?.from?.pathname || 
+                     (userRole === 'teacher' ? '/teacher-dashboard' : '/student-dashboard')
+        
+        navigate(from, { replace: true })
       } else {
         throw new Error(res.data.message || 'Login failed')
       }
@@ -83,7 +105,7 @@ const Login = () => {
               />
             </div>
 
-            {/* ── Added "Forgot password?" link ── */}
+            {/* Forgot password link */}
             <div className="flex justify-end text-sm">
               <Link
                 to="/forgot-password"

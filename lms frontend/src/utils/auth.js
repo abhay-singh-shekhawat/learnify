@@ -1,3 +1,5 @@
+// src/utils/auth.js
+
 export const saveToken = (token) => {
   if (!token) return;
   localStorage.setItem('token', token);
@@ -9,9 +11,21 @@ export const getToken = () => {
 
 export const removeToken = () => {
   localStorage.removeItem('token');
+  localStorage.removeItem('userRole'); // also clean up role
+};
+
+export const saveUserRole = (role) => {
+  if (role) {
+    localStorage.setItem('userRole', role);
+  }
 };
 
 export const getUserRole = () => {
+  // First try to read from saved storage (fast)
+  const savedRole = localStorage.getItem('userRole');
+  if (savedRole) return savedRole;
+
+  // Fallback: decode from token if no saved role
   const token = getToken();
   if (!token) return null;
 
@@ -21,8 +35,11 @@ export const getUserRole = () => {
     const jsonPayload = atob(base64);
     const decoded = JSON.parse(jsonPayload);
 
-    // Adjust based on your JWT payload (usually "role" or "Role")
-    return decoded.role || decoded.Role || null;
+    const role = decoded.role || decoded.Role || null;
+    if (role) {
+      saveUserRole(role); // cache it for next time
+    }
+    return role;
   } catch (error) {
     console.error('Failed to decode JWT:', error);
     return null;
