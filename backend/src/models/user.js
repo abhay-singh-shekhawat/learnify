@@ -25,7 +25,6 @@ const userSchema = new mongoose.Schema({
     },
     publicId: { 
         type: String, 
-        required: true ,
         default : ""
     },
     isApproved : {
