@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import api from '../utils/api'
-import { getUserRole, removeToken } from '../utils/auth'
+import { getUserRole, getToken, removeToken } from '../utils/auth'  // make sure getToken is exported
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -13,16 +13,42 @@ const Header = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const role = getUserRole()
-  const isLoggedIn = !!localStorage.getItem('token')
-
-  // Fetch real user data (including avatar)
+  const [isLoggedIn, setIsLoggedIn] = useState(!!getToken())
+  const [role, setRole] = useState(getUserRole())
   const [user, setUser] = useState(null)
   const [loadingUser, setLoadingUser] = useState(true)
 
+  // Re-check auth state whenever token changes
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = getToken()
+      const currentRole = getUserRole()
+
+      setIsLoggedIn(!!token)
+      setRole(currentRole)
+    }
+
+    checkAuth()
+
+    // Listen for storage changes (e.g. login from another tab)
+    window.addEventListener('storage', checkAuth)
+
+    // Also poll every 2 seconds in case token changes without storage event
+    const interval = setInterval(checkAuth, 2000)
+
+    return () => {
+      window.removeEventListener('storage', checkAuth)
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Fetch user data (avatar, etc.) when logged in
   useEffect(() => {
     if (isLoggedIn) {
       fetchUserData()
+    } else {
+      setUser(null)
+      setLoadingUser(false)
     }
   }, [isLoggedIn])
 
@@ -31,8 +57,15 @@ const Header = () => {
       const res = await api.get('/api-v1/user/me')
       setUser(res.data.user)
     } catch (err) {
-      console.error('Failed to fetch user for header avatar:', err)
-      // Optional: toast.error('Failed to load user info')
+      console.error('Failed to fetch user for header:', err)
+      // If token invalid → logout
+      if (err.response?.status === 401) {
+        removeToken()
+        setIsLoggedIn(false)
+        setRole(null)
+        toast.info('Session expired. Please login again.')
+        navigate('/login')
+      }
     } finally {
       setLoadingUser(false)
     }
@@ -44,6 +77,9 @@ const Header = () => {
 
   const handleLogout = () => {
     removeToken()
+    setIsLoggedIn(false)
+    setRole(null)
+    setUser(null)
     toast.success('Logged out successfully')
     navigate('/login')
     setIsMenuOpen(false)
@@ -82,7 +118,6 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    {/* Use real avatar from fetched user data */}
                     <AvatarImage 
                       src={user?.Avatar || '/placeholder-avatar.jpg'} 
                       alt="User avatar" 
