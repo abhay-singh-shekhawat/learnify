@@ -13,10 +13,10 @@ const sendOtp = async function (email) {
       subject: 'Your Verification Code',
       html: `
         <div style="font-family: Arial; padding: 20px; text-align: center;">
-          <h2>Welcome to Your App!</h2>
+          <h2>Welcome to LearnifyIT</h2>
           <p>Your one-time password (OTP) is:</p>
           <h1 style="font-size: 40px; letter-spacing: 10px;">${otp}</h1>
-          <p>This code expires in 10 minutes. Do not share it.</p>
+          <p>This code expires in 2 minutes. Do not share it.</p>
           <p>If you didn't request this, ignore this email.</p>
         </div>
       `,
