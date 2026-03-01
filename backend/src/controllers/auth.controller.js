@@ -32,7 +32,10 @@ const register = asyncHandeler(async (req,res,next)=>{
       throw new api_error(400,"name , email ,password are required")
     }
 
-    const otp = await sendOtp(Email)
+    const {success , otp} = await sendOtp(Email)
+    if(!success){
+      throw new api_error(500,"otp not sent")
+    }
     const hashedOtp = await bcrypt.hash(otp,10)
     const expiry = new Date(Date.now() + 2*60*1000)
 
@@ -135,7 +138,10 @@ const resendOtp = asyncHandeler(async(req,res,next)=>{
     if(!user){
       throw new api_error(404,"user not found")
     }
-    const otp = await sendOtp(Email)
+    const {success , otp } = await sendOtp(Email)
+    if(!success){
+      throw new api_error(500,"otp not sent")
+    }
     const hashedOtp = await bcrypt.hash(otp,10)
     const expiry = new Date(Date.now()+2*60*1000)
 
@@ -158,6 +164,9 @@ const login = asyncHandeler(async (req,res,next)=>{
     const user = await User.findOne({ Email }).select("+Password");
     if (!user) {
       throw new api_error(401,"user not found")
+    }
+    if (!user.otpVerify) {
+      throw new api_error(401, "Please verify email first")
     }
 
     const isPasswordCorrect = await bcrypt.compare(Password,user.Password)
